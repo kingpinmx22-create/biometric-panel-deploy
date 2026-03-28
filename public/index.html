@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Panel Biométrico Forense - Standalone</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: 'Courier New', monospace;
+      background: #0a0e27;
+      color: #00ff00;
+      padding: 20px;
+      min-height: 100vh;
+    }
+    
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+    
+    header {
+      border: 2px solid #00ff00;
+      padding: 20px;
+      margin-bottom: 30px;
+      background: #0f1a3d;
+    }
+    
+    h1 {
+      font-size: 24px;
+      margin-bottom: 5px;
+      text-shadow: 0 0 10px #00ff00;
+    }
+    
+    .subtitle {
+      color: #00aa00;
+      font-size: 12px;
+    }
+    
+    .content {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      margin-bottom: 30px;
+    }
+    
+    .panel {
+      border: 2px solid #00ff00;
+      padding: 20px;
+      background: #0f1a3d;
+    }
+    
+    .panel h2 {
+      font-size: 16px;
+      margin-bottom: 15px;
+      color: #00ff00;
+      border-bottom: 1px solid #00ff00;
+      padding-bottom: 10px;
+    }
+    
+    .panel h3 {
+      font-size: 13px;
+      margin-top: 15px;
+      margin-bottom: 10px;
+      color: #00aa00;
+    }
+    
+    .upload-area {
+      border: 2px dashed #00ff00;
+      padding: 30px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s;
+      background: rgba(0, 255, 0, 0.05);
+    }
+    
+    .upload-area:hover {
+      background: rgba(0, 255, 0, 0.1);
+      border-color: #00aa00;
+    }
+    
+    .upload-area.dragover {
+      background: rgba(0, 255, 0, 0.2);
+      border-color: #00ff00;
+    }
+    
+    input[type="file"] {
+      display: none;
+    }
+    
+    input[type="text"],
+    textarea,
+    select {
+      background: #0a0e27;
+      color: #00ff00;
+      border: 1px solid #00ff00;
+      padding: 8px;
+      font-family: 'Courier New', monospace;
+      font-size: 12px;
+      width: 100%;
+      margin-bottom: 10px;
+    }
+    
+    textarea {
+      resize: vertical;
+      min-height: 80px;
+    }
+    
+    input[type="range"] {
+      width: 100%;
+      height: 8px;
+      border-radius: 5px;
+      background: #00ff00;
+      outline: none;
+      -webkit-appearance: none;
+      appearance: none;
+    }
+    
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #00ff00;
+      cursor: pointer;
+      border: 2px solid #0a0e27;
+    }
+    
+    input[type="range"]::-moz-range-thumb {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #00ff00;
+      cursor: pointer;
+      border: 2px solid #0a0e27;
+    }
+    
+    input[type="range"]::-moz-range-track {
+      background: transparent;
+      border: none;
+    }
+    
+    input[type="range"]::-webkit-slider-runnable-track {
+      background: #1a2d5c;
+      height: 8px;
+      border-radius: 5px;
+    }
+    
+    .button {
+      background: #00ff00;
+      color: #0a0e27;
+      border: none;
+      padding: 10px 20px;
+      margin-top: 10px;
+      margin-right: 10px;
+      cursor: pointer;
+      font-weight: bold;
+      font-family: 'Courier New', monospace;
+      transition: all 0.3s;
+      font-size: 12px;
+    }
+    
+    .button:hover {
+      background: #00aa00;
+      box-shadow: 0 0 10px #00ff00;
+    }
+    
+    .button:disabled {
+      background: #666;
+      cursor: not-allowed;
+      opacity: 0.5;
+    }
+    
+    .button-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    
+    .preview {
+      margin-top: 20px;
+      text-align: center;
+    }
+    
+    .preview img {
+      max-width: 100%;
+      max-height: 300px;
+      border: 1px solid #00ff00;
+      margin-bottom: 10px;
+    }
+    
+    .results {
+      background: rgba(0, 255, 0, 0.05);
+      padding: 15px;
+      border-left: 3px solid #00ff00;
+      margin-top: 20px;
+      font-size: 11px;
+      line-height: 1.6;
+      max-height: 400px;
+      overflow-y: auto;
+    }
+    
+    .result-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 5px 0;
+      border-bottom: 1px solid rgba(0, 255, 0, 0.2);
+    }
+    
+    .result-item:last-child {
+      border-bottom: none;
+    }
+    
+    .result-label {
+      color: #00aa00;
+      flex: 1;
+    }
+    
+    .result-value {
+      color: #00ff00;
+      font-weight: bold;
+      text-align: right;
+      flex: 1;
+    }
+    
+    .result-section {
+      margin-top: 15px;
+      padding-top: 10px;
+      border-top: 1px solid rgba(0, 255, 0, 0.3);
+    }
+    
+    .result-section-title {
+      color: #00ff00;
+      font-weight: bold;
+      margin-bottom: 8px;
+    }
+    
+    .loading {
+      display: none;
+      text-align: center;
+      margin: 20px 0;
+    }
+    
+    .spinner {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border: 2px solid #00ff00;
+      border-top: 2px solid transparent;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    
+    .error {
+      background: rgba(255, 0, 0, 0.1);
+      border: 1px solid #ff0000;
+      color: #ff6666;
+      padding: 10px;
+      margin-top: 10px;
+      border-radius: 3px;
+      font-size: 12px;
+    }
+    
+    .success {
+      background: rgba(0, 255, 0, 0.1);
+      border: 1px solid #00ff00;
+      color: #00ff00;
+      padding: 10px;
+      margin-top: 10px;
+      border-radius: 3px;
+      font-size: 12px;
+    }
+    
+    .comparison {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 20px;
+    }
+    
+    .comparison-item {
+      text-align: center;
+    }
+    
+    .comparison-item img {
+      max-width: 100%;
+      border: 1px solid #00ff00;
+      margin-bottom: 5px;
+    }
+    
+    .comparison-label {
+      font-size: 11px;
+      color: #00aa00;
+    }
+    
+    .mode-selector {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 15px;
+    }
+    
+    .mode-button {
+      padding: 8px;
+      border: 1px solid #00ff00;
+      background: transparent;
+      color: #00ff00;
+      cursor: pointer;
+      font-family: 'Courier New', monospace;
+      font-size: 11px;
+      transition: all 0.3s;
+    }
+    
+    .mode-button:hover {
+      background: rgba(0, 255, 0, 0.1);
+    }
+    
+    .mode-button.active {
+      background: #00ff00;
+      color: #0a0e27;
+    }
+    
+    .no-results {
+      text-align: center;
+      color: #00aa00;
+      padding: 30px;
+      font-size: 12px;
+    }
+    
+    @media (max-width: 768px) {
+      .content {
+        grid-template-columns: 1fr;
+      }
+      
+      .mode-selector {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>🔬 PANEL BIOMÉTRICO FORENSE</h1>
+      <p class="subtitle">Standalone Edition - Procesamiento Local Sin LLM</p>
+    </header>
+    
+    <div class="content">
+      <!-- Panel de Carga -->
+      <div class="panel">
+        <h2>📤 Cargar Huella Dactilares</h2>
+        
+        <div class="upload-area" id="uploadArea">
+          <p>Arrastra una imagen aquí o haz clic para seleccionar</p>
+          <p style="font-size: 11px; color: #00aa00; margin-top: 10px;">
+            Formatos: PNG, JPG, BMP (máx 10MB)
+          </p>
+          <input type="file" id="fileInput" accept="image/*">
+        </div>
+        
+        <div class="preview" id="preview"></div>
+        
+        <h3>Modo de Procesamiento</h3>
+        <div class="mode-selector">
+          <button class="mode-button active" data-mode="standard">Estándar</button>
+          <button class="mode-button" data-mode="preserve">Preservar</button>
+          <button class="mode-button" data-mode="texture">Textura</button>
+          <button class="mode-button" data-mode="fill">Relleno</button>
+        </div>
+        
+        <h3>🧬 Intensidad de Poros</h3>
+        <div style="background: #1a2d5c; padding: 12px; border: 1px solid #00ff00; border-radius: 4px; margin-bottom: 15px;">
+          <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 8px;">
+            <input type="range" id="poreIntensitySlider" min="0.1" max="5" step="0.1" value="1">
+            <span id="poreIntensityValue" style="color: #00ff00; font-weight: bold; font-size: 14px; min-width: 50px; text-align: right; background: #0a0e27; padding: 6px 10px; border: 1px solid #00ff00; border-radius: 3px; display: inline-block;">1.0x</span>
+          </div>
+          <p style="font-size: 10px; color: #00aa00; margin: 0;">Mín: 0.1x | Máx: 5x | Actual: <span id="poreIntensityLabel" style="color: #00ff00; font-weight: bold;">1.0x</span></p>
+        </div>
+        
+        <h3>Prompt Personalizado (Opcional)</h3>
+        <textarea id="customPrompt" placeholder="Ingresa un prompt personalizado para el procesamiento..."></textarea>
+        
+        <div class="button-group">
+          <button class="button" id="analyzeBtn" disabled>
+            🔍 ANALIZAR
+          </button>
+          
+          <button class="button" id="processBtn" disabled>
+            ⚙️ PROCESAR
+          </button>
+        </div>
+        
+        <div class="loading" id="loading">
+          <div class="spinner"></div>
+          <p style="margin-top: 10px;">Procesando...</p>
+        </div>
+        
+        <div id="message"></div>
+      </div>
+      
+      <!-- Panel de Resultados -->
+      <div class="panel">
+        <h2>📊 Análisis de Características</h2>
+        
+        <div id="analysisResults" style="display: none;">
+          <div class="results">
+            <!-- Información Básica -->
+            <div class="result-section">
+              <div class="result-section-title">📐 INFORMACIÓN BÁSICA</div>
+              <div class="result-item">
+                <span class="result-label">Dimensiones:</span>
+                <span class="result-value" id="dimensions">-</span>
+              </div>
+              <div class="result-item">
+                <span class="result-label">Calidad:</span>
+                <span class="result-value" id="quality">-</span>
+              </div>
+            </div>
+            
+            <!-- Características de Crestas -->
+            <div class="result-section">
+              <div class="result-section-title">🔀 CARACTERÍSTICAS DE CRESTAS</div>
+              <div class="result-item">
+                <span class="result-label">Densidad de Crestas:</span>
+                <span class="result-value" id="ridgeDensity">-</span>
+              </div>
+              <div class="result-item">
+                <span class="result-label">Orientación:</span>
+                <span class="result-value" id="ridgeOrientation">-</span>
+              </div>
+              <div class="result-item">
+                <span class="result-label">Patrón Detectado:</span>
+                <span class="result-value" id="pattern">-</span>
+              </div>
+            </div>
+            
+            <!-- Puntos Característicos -->
+            <div class="result-section">
+              <div class="result-section-title">🎯 PUNTOS CARACTERÍSTICOS</div>
+              <div class="result-item">
+                <span class="result-label">Bifurcaciones:</span>
+                <span class="result-value" id="bifurcations">-</span>
+              </div>
+              <div class="result-item">
+                <span class="result-label">Terminaciones:</span>
+                <span class="result-value" id="terminations">-</span>
+              </div>
+            </div>
+            
+            <!-- Puntos de Referencia -->
+            <div class="result-section">
+              <div class="result-section-title">📍 PUNTOS DE REFERENCIA</div>
+              <div class="result-item">
+                <span class="result-label">Core:</span>
+                <span class="result-value" id="coreLocation">-</span>
+              </div>
+              <div class="result-item">
+                <span class="result-label">Deltas:</span>
+                <span class="result-value" id="deltaCount">-</span>
+              </div>
+            </div>
+            
+            <!-- Análisis de Textura -->
+            <div class="result-section">
+              <div class="result-section-title">🌊 ANÁLISIS DE TEXTURA</div>
+              <div class="result-item">
+                <span class="result-label">Tamaño de Poros:</span>
+                <span class="result-value" id="poreSize">-</span>
+              </div>
+              <div class="result-item">
+                <span class="result-label">Granularidad:</span>
+                <span class="result-value" id="granularity">-</span>
+              </div>
+              <div class="result-item">
+                <span class="result-label">Media de Intensidad:</span>
+                <span class="result-value" id="intensityMean">-</span>
+              </div>
+            </div>
+            
+            <!-- Metadata -->
+            <div class="result-section">
+              <div class="result-section-title">⏰ METADATA</div>
+              <div class="result-item">
+                <span class="result-label">Timestamp:</span>
+                <span class="result-value" id="timestamp">-</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div id="noResults" class="no-results">
+          Carga una huella para ver el análisis
+        </div>
+      </div>
+    </div>
+    
+    <!-- Comparación Antes/Después -->
+    <div class="panel" id="comparisonPanel" style="display: none;">
+      <h2>🔄 Comparación Original vs Procesada</h2>
+      <div class="comparison">
+        <div class="comparison-item">
+          <img id="originalImg" src="" alt="Original">
+          <p class="comparison-label">ORIGINAL</p>
+        </div>
+        <div class="comparison-item">
+          <img id="processedImg" src="" alt="Procesada">
+          <p class="comparison-label">PROCESADA</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <script>
+    const uploadArea = document.getElementById('uploadArea');
+    const fileInput = document.getElementById('fileInput');
+    const analyzeBtn = document.getElementById('analyzeBtn');
+    const processBtn = document.getElementById('processBtn');
+    const preview = document.getElementById('preview');
+    const loading = document.getElementById('loading');
+    const message = document.getElementById('message');
+    const analysisResults = document.getElementById('analysisResults');
+    const noResults = document.getElementById('noResults');
+    const comparisonPanel = document.getElementById('comparisonPanel');
+    const customPromptInput = document.getElementById('customPrompt');
+    const poreIntensitySlider = document.getElementById('poreIntensitySlider');
+    const poreIntensityValue = document.getElementById('poreIntensityValue');
+    
+    let currentFile = null;
+    let selectedMode = 'standard';
+    let poreIntensity = 1.0;
+    
+    // Selector de modo
+    document.querySelectorAll('.mode-button').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.mode-button').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        selectedMode = btn.dataset.mode;
+      });
+    });
+    
+    // Slider de intensidad de poros
+    poreIntensitySlider.addEventListener('input', (e) => {
+      poreIntensity = parseFloat(e.target.value);
+      const displayValue = poreIntensity.toFixed(1) + 'x';
+      poreIntensityValue.textContent = displayValue;
+      document.getElementById('poreIntensityLabel').textContent = displayValue;
+      
+      if (poreIntensity < 0.5) {
+        poreIntensityValue.style.color = '#0088ff';
+      } else if (poreIntensity > 2.5) {
+        poreIntensityValue.style.color = '#ff6600';
+      } else {
+        poreIntensityValue.style.color = '#00ff00';
+      }
+    });
+    
+    // Drag and drop
+    uploadArea.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      uploadArea.classList.add('dragover');
+    });
+    
+    uploadArea.addEventListener('dragleave', () => {
+      uploadArea.classList.remove('dragover');
+    });
+    
+    uploadArea.addEventListener('drop', (e) => {
+      e.preventDefault();
+      uploadArea.classList.remove('dragover');
+      const files = e.dataTransfer.files;
+      if (files.length > 0) {
+        handleFile(files[0]);
+      }
+    });
+    
+    uploadArea.addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', (e) => {
+      if (e.target.files.length > 0) {
+        handleFile(e.target.files[0]);
+      }
+    });
+    
+    function handleFile(file) {
+      if (!file.type.startsWith('image/')) {
+        showError('Por favor selecciona una imagen válida');
+        return;
+      }
+      
+      if (file.size > 10 * 1024 * 1024) {
+        showError('La imagen debe ser menor a 10MB');
+        return;
+      }
+      
+      currentFile = file;
+      analyzeBtn.disabled = false;
+      processBtn.disabled = false;
+      
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        preview.innerHTML = `<img src="${e.target.result}" alt="Preview">`;
+      };
+      reader.readAsDataURL(file);
+      
+      message.innerHTML = '';
+    }
+    
+    analyzeBtn.addEventListener('click', async () => {
+      if (!currentFile) return;
+      
+      const formData = new FormData();
+      formData.append('fingerprint', currentFile);
+      
+      loading.style.display = 'block';
+      message.innerHTML = '';
+      
+      try {
+        const response = await fetch('/api/analyze', {
+          method: 'POST',
+          body: formData
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+          displayAnalysis(data.analysis);
+          showSuccess('✓ Análisis completado exitosamente');
+        } else {
+          showError('Error: ' + data.error);
+        }
+      } catch (error) {
+        showError('Error de conexión: ' + error.message);
+      } finally {
+        loading.style.display = 'none';
+      }
+    });
+    
+    processBtn.addEventListener('click', async () => {
+      if (!currentFile) return;
+      
+      const formData = new FormData();
+      formData.append('fingerprint', currentFile);
+      formData.append('mode', selectedMode);
+      
+      // Construir prompt con intensidad de poros
+      let finalPrompt = customPromptInput.value || '';
+      if (poreIntensity !== 1.0) {
+        const multiplier = Math.round(poreIntensity * 100) + '%';
+        finalPrompt = (finalPrompt ? finalPrompt + ' - ' : '') + multiplier + ' poros';
+      }
+      formData.append('customPrompt', finalPrompt);
+      
+      loading.style.display = 'block';
+      message.innerHTML = '';
+      
+      try {
+        const response = await fetch('/api/process-advanced', {
+          method: 'POST',
+          body: formData
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+          displayAnalysis(data.analysis);
+          displayComparison(data.processedImage);
+          showSuccess(`✓ Procesamiento completado (modo: ${data.processingMode})`);
+        } else {
+          showError('Error: ' + data.error);
+        }
+      } catch (error) {
+        showError('Error de conexión: ' + error.message);
+      } finally {
+        loading.style.display = 'none';
+      }
+    });
+    
+    function displayAnalysis(analysis) {
+      document.getElementById('dimensions').textContent = `${analysis.width}x${analysis.height}px`;
+      document.getElementById('quality').textContent = analysis.quality + '%';
+      document.getElementById('ridgeDensity').textContent = analysis.ridgeDensity + '%';
+      document.getElementById('ridgeOrientation').textContent = analysis.ridgeOrientation;
+      document.getElementById('pattern').textContent = analysis.pattern;
+      document.getElementById('bifurcations').textContent = analysis.bifurcations;
+      document.getElementById('terminations').textContent = analysis.terminations;
+      
+      if (analysis.coreLocation) {
+        document.getElementById('coreLocation').textContent = 
+          `(${analysis.coreLocation.x}, ${analysis.coreLocation.y})`;
+      }
+      
+      document.getElementById('deltaCount').textContent = 
+        (analysis.deltaLocations ? analysis.deltaLocations.length : 0) + ' puntos';
+      
+      document.getElementById('poreSize').textContent = analysis.poreSize + 'px';
+      document.getElementById('granularity').textContent = analysis.textureGranularity.granularity + '%';
+      document.getElementById('intensityMean').textContent = analysis.textureGranularity.mean;
+      document.getElementById('timestamp').textContent = new Date().toLocaleTimeString();
+      
+      analysisResults.style.display = 'block';
+      noResults.style.display = 'none';
+    }
+    
+    function displayComparison(processedImageUrl) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        document.getElementById('originalImg').src = e.target.result;
+      };
+      reader.readAsDataURL(currentFile);
+      
+      document.getElementById('processedImg').src = processedImageUrl;
+      comparisonPanel.style.display = 'block';
+    }
+    
+    function showError(msg) {
+      message.innerHTML = `<div class="error">${msg}</div>`;
+    }
+    
+    function showSuccess(msg) {
+      message.innerHTML = `<div class="success">${msg}</div>`;
+    }
+  </script>
+</body>
+</html>
